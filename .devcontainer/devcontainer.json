@@ -1,0 +1,44 @@
+{
+    "name": "Generic Ubuntu Development Container",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": "..",
+        "args": {
+            "SOURCE_DIR": "/workspace/zsh",
+            "TARGET_DIR": "/home/vscode/.config/zsh"
+        }
+    },
+    "containerEnv": {
+        "SSH_CONTEXT": "personal",
+        "ZSH_PROFILE": "devcontainer"
+    },
+    "mounts": [
+        {
+            "type": "bind",
+            "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.ssh/contexts/${localEnv:SSH_CONTEXT}",
+            "target": "/home/vscode/.ssh/contexts/${localEnv:SSH_CONTEXT}"
+        }
+    ],
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "terminal.integrated.profiles.linux": {
+                    "zsh": {
+                        "path": "/usr/bin/zsh"
+                    }
+                }
+            }
+        }
+    },
+    "features": {
+        "ghcr.io/larsnieuwenhuizen/features/neovim:0": {},
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": true,
+            "configureZshAsDefaultShell": true,
+            "installOhMyZsh": false
+        }
+    },
+    "postCreateCommand": "/bin/sh /usr/src/post-create.sh",
+    "remoteUser": "vscode"
+}
