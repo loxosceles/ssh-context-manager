@@ -10,10 +10,10 @@
 
 set -euo pipefail
 
+REPO_NAME="ssh-context-manager"
+
 # Configuration
-# SCRIPT_DIR="$(cd "$(dirname "${(%):-%N}")" && pwd)"
-# SOURCE_DIR="${SCRIPT_DIR}/zsh"
-SOURCE_DIR="/workspaces/ssh-manager/zsh"
+SOURCE_DIR="/workspaces/${REPO_NAME}/zsh"
 TARGET_DIR="${HOME}/.config/zsh"
 BACKUP_ROOT="/tmp/zsh-config-backups"
 
