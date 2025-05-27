@@ -22,7 +22,23 @@ script, no dependencies required (other than the test runner `shellspec`).
 
 ## Usage
 
-- Switch contexts by changing the `SSH_CONTEXT` variable and re-running the script.
+To switch SSH contexts, use the `ssh-context` command as shown below. This updates the `SSH_CONTEXT` environment variable and applies the selected context's configuration:
+
+```sh
+ssh-context <context-name>
+```
+
+If you are using a devcontainer, ensure the `.devcontainer.json` includes the
+following to set the active context (use the .devontainer.json of this
+repository as a reference):
+
+```json
+"containerEnv": {
+    "SSH_CONTEXT": "<context-name>"
+}
+```
+
+After switching, your active SSH config will be updated in `~/.ssh/config`.
 - Your active SSH config will be updated in `~/.ssh/config`.
 
 ## Run the Tests
