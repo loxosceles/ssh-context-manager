@@ -1,8 +1,4 @@
-# Skip SSH context manager in containers unless explicitly enabled
-# if [[ -f /.dockerenv ]] && [[ -z "$ENABLE_SSH_CONTEXT" ]]; then
-#     echo "SSH context manager is disabled in container environments."
-#     return 0
-# fi
+#!/usr/bin/env zsh
 
 # SSH agent socket management
 SOCK="/tmp/ssh-agent-$USER-screen"
@@ -46,7 +42,11 @@ function __generate_context_config {
     local ssh_root=$(__get_ssh_root)
     local context_dir="$ssh_root/contexts/$context"
 
-    [[ ! -d "$context_dir" ]] && echo "⚠️  Context directory doesn't exist: $context_dir" >&2 && return 1
+    # Validate context directory exists first
+    if [[ ! -d "$context_dir" ]]; then
+        echo "Error: Context directory '$context_dir' doesn't exist" >&2
+        return 1
+    fi
 
     local config_file="$context_dir/config"
 
@@ -61,7 +61,7 @@ function __generate_context_config {
 # Auto-generated config for SSH context
 EOF
 
-    for key_file in "$context_dir"/id_*; do
+    for key_file in "$context_dir"/id_*(N); do
         [[ ! -f "$key_file" ]] && continue
         [[ "$key_file" == *.pub ]] && continue
 
@@ -86,24 +86,32 @@ EOF
 # Main SSH context switching command
 function ssh-context {
     if [[ -z "$1" ]]; then
-        echo "Current SSH context: ${SSH_CONTEXT:-$DEFAULT_SSH_CONTEXT (default)}"
+        echo "Current SSH context: ${SSH_CONTEXT:-$DEFAULT_SSH_CONTEXT}"
         return 0
     fi
 
     case "$1" in
-    --list | -l)
-        echo "Available SSH contexts:"
+    --list|-l)
         local ssh_root=$(__get_ssh_root)
-        for ctx in "$ssh_root/contexts"/*; do
+        local contexts=("$ssh_root/contexts"/*(N))
+        
+        if (( ${#contexts} == 0 )); then
+            echo "No available SSH contexts"
+            return 0
+        fi
+
+        echo "Available SSH contexts:"
+        for ctx in "${contexts[@]}"; do
             [[ -d "$ctx" ]] && echo "  - $(basename "$ctx")"
         done
+        return 0
         ;;
-    --generate | -g)
-        if [[ -n "$2" ]]; then
-            __generate_context_config "$2"
-        else
-            echo "Usage: ssh-context --generate <context-name>"
+    --generate|-g)
+        if [[ -z "$2" ]]; then
+            echo "Error: Must specify context name to generate" >&2
+            return 1
         fi
+        __generate_context_config "$2"
         ;;
     --help | -h)
         cat <<EOF
@@ -120,9 +128,14 @@ Current context: ${SSH_CONTEXT:-$DEFAULT_SSH_CONTEXT (default)}
 EOF
         ;;
     *)
+       # Only validate existing contexts in the default case
+       local ssh_root=$(__get_ssh_root)
+        if [[ ! -d "$ssh_root/contexts/$1" ]]; then
+            echo "Error: Context '$1' doesn't exist (create with --generate)" >&2
+            return 1
+        fi
         export SSH_CONTEXT="$1"
-        __update_ssh_config
-        echo "➜ Switched to: $SSH_CONTEXT"
+        __update_ssh_config && echo "➜ Switched to: $SSH_CONTEXT"
         ;;
     esac
 }
