@@ -1,4 +1,4 @@
-name: Run ShellSpec Tests
+name: ShellSpec Tests
 
 on:
   push:
@@ -19,6 +19,13 @@ jobs:
       run: |
         curl -fsSL https://git.io/shellspec | sh -s -- --yes
         echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Create SSH test profile structure
+      run: |
+        mkdir -p ~/.ssh/contexts/test-profile
+        touch ~/.ssh/contexts/test-profile/{config,id_rsa,id_rsa.pub,known_hosts}
+        # Set appropriate permissions for private key
+        chmod 600 ~/.ssh/contexts/test-profile/id_rsa
 
     - name: Run ShellSpec tests
       run: shellspec -s zsh
