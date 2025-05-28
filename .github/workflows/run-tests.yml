@@ -22,10 +22,10 @@ jobs:
 
     - name: Create SSH test profile structure
       run: |
-        mkdir -p ~/.ssh/contexts/test-profile
-        touch ~/.ssh/contexts/test-profile/{config,id_rsa,id_rsa.pub,known_hosts}
+        mkdir -p ~/.ssh/contexts/personal
+        touch ~/.ssh/contexts/personal/{config,id_rsa,id_rsa.pub,known_hosts}
         # Set appropriate permissions for private key
-        chmod 600 ~/.ssh/contexts/test-profile/id_rsa
+        chmod 600 ~/.ssh/contexts/personal/id_rsa
 
     - name: Run ShellSpec tests
       run: shellspec -s zsh
