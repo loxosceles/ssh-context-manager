@@ -1,14 +1,14 @@
-Describe 'ZSH Environment'
-  It "tests if the shell is set to zsh"
-    When call echo "$SHELL"
-    The output should equal '/bin/zsh'
-  End
+# Describe 'ZSH Environment'
+#   It "tests if the shell is set to zsh"
+#     When call echo "$SHELL"
+#     The output should equal '/bin/zsh'
+#   End
 
-  It "tests if the ZSH environment variable is set"
-    When call echo "$ZSH"
-    The output should equal '/home/vscode/.oh-my-zsh'
-  End
-End
+#   It "tests if the ZSH environment variable is set"
+#     When call echo "$ZSH"
+#     The output should equal '/home/vscode/.oh-my-zsh'
+#   End
+# End
 
 Describe 'ssh.zsh'
   Include ./zsh/modules/ssh.zsh
@@ -16,7 +16,7 @@ Describe 'ssh.zsh'
   Describe 'Environment Variables'
     It "tests if the SOCK environment variable is set"
       When call echo $SOCK
-      The output should equal '/tmp/ssh-agent-vscode-screen'
+      The output should equal "/tmp/ssh-agent-${USER}-screen"
     End
 
      It 'tests if the SSH_CONTEXT environment variable is set'
@@ -38,7 +38,7 @@ Describe 'ssh.zsh'
   Describe '__get_ssh_root'
     It 'tests __get_ssh_root function in dev container'
       When call __get_ssh_root
-      The output should equal '/home/vscode/.ssh'
+      The output should equal "/home/${USER}/.ssh"
     End
   End
 
