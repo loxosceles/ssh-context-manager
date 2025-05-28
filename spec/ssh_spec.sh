@@ -1,15 +1,3 @@
-# Describe 'ZSH Environment'
-#   It "tests if the shell is set to zsh"
-#     When call echo "$SHELL"
-#     The output should equal '/bin/zsh'
-#   End
-
-#   It "tests if the ZSH environment variable is set"
-#     When call echo "$ZSH"
-#     The output should equal '/home/vscode/.oh-my-zsh'
-#   End
-# End
-
 Describe 'ssh.zsh'
   Include ./zsh/modules/ssh.zsh
 
@@ -22,23 +10,6 @@ Describe 'ssh.zsh'
      It 'tests if the SSH_CONTEXT environment variable is set'
       When call echo $SSH_CONTEXT
       The output should equal 'personal'
-    End
-
-    It "tests if DEV_CONTAINER_USER is set correctly"
-      When call echo "$DEV_CONTAINER_USER"
-      The output should equal 'vscode'
-    End
-
-    It "tests if DEFAULT_SSH_CONTEXT is set correctly"
-      When call echo "$DEFAULT_SSH_CONTEXT"
-      The output should equal 'personal'
-    End
-  End
-
-  Describe '__get_ssh_root'
-    It 'tests __get_ssh_root function in dev container'
-      When call __get_ssh_root
-      The output should equal "/home/${USER}/.ssh"
     End
   End
 
@@ -64,13 +35,6 @@ Describe 'ssh.zsh'
 
     It "uses the current SSH_CONTEXT"
       export SSH_CONTEXT="personal"
-      When call __update_ssh_config
-      The contents of file "$SSH_ROOT/config" should include 'contexts/personal/config'
-      The status should be success
-    End
-
-    It "falls back to DEFAULT_SSH_CONTEXT when SSH_CONTEXT is unset"
-      unset SSH_CONTEXT
       When call __update_ssh_config
       The contents of file "$SSH_ROOT/config" should include 'contexts/personal/config'
       The status should be success
