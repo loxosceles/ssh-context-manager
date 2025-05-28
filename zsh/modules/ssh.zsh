@@ -12,6 +12,12 @@ export SSH_CONTEXT=personal
 readonly DEFAULT_SSH_CONTEXT="personal"
 readonly DEV_CONTAINER_USER="vscode"
 
+function __confirm_overwrite() {
+  echo -n "Continue? (y/N) " >&2
+  read -r REPLY
+  [[ "$REPLY" == "y" ]]
+}
+
 # Core SSH context functions
 function __get_ssh_root() {
     if [[ "$(whoami)" == "$DEV_CONTAINER_USER" ]] && [[ -d "/home/$DEV_CONTAINER_USER/.ssh" ]]; then
@@ -42,9 +48,21 @@ function __generate_context_config {
     local ssh_root=$(__get_ssh_root)
     local context_dir="$ssh_root/contexts/$context"
 
-    # Validate context directory exists first
     if [[ ! -d "$context_dir" ]]; then
-        echo "Error: Context directory '$context_dir' doesn't exist" >&2
+        cat <<EOF >&2
+Error: Context directory '$context_dir' doesn't exist.
+
+To create a new context:
+1. Create the context directory:
+   mkdir -p $context_dir
+
+2. Add your SSH keys to the directory:
+   cp /path/to/your/key $context_dir/id_rsa
+   cp /path/to/your/key.pub $context_dir/id_rsa.pub
+
+3. Run this command again:
+   ssh-context --generate $context
+EOF
         return 1
     fi
 
@@ -52,10 +70,30 @@ function __generate_context_config {
 
     if [[ -f "$config_file" ]]; then
         local backup_file="$config_file.backup.$(date +%Y%m%d_%H%M%S)"
+        
+        echo "⚠️ WARNING: This will overwrite your existing config file!" >&2
+        echo "   Original file will be backed up as: $backup_file" >&2
+        echo >&2
+        echo "The following actions will be performed:" >&2
+        echo "1. Backup current config to $backup_file" >&2
+        echo "2. Generate a new template config file" >&2
+        echo >&2
+        echo "To restore your original config later:" >&2
+        echo "   cp '$backup_file' '$config_file'" >&2
+        echo >&2
+        
+        echo
+        if ! __confirm_overwrite; then
+            echo "🚫 Operation cancelled" >&2
+            echo "No changes made to $config_file"
+            return 1
+        fi
+
         cp "$config_file" "$backup_file"
         echo "📦 Backed up existing config to: $backup_file"
     fi
 
+    # Rest of the function remains the same...
     cat >"$config_file" <<EOF
 # ===== CONTEXT: $context =====
 # Auto-generated config for SSH context
@@ -118,11 +156,11 @@ function ssh-context {
 SSH Context Manager
 
 Usage:
-  ssh-context                    Show current context
-  ssh-context <context-name>     Switch to context
-  ssh-context --list, -l         List available contexts
-  ssh-context --generate <name>  Generate config template for context
-  ssh-context --help, -h         Show this help
+  ssh-context                           Show current context
+  ssh-context <context-name>            Switch to context
+  ssh-context --list, -l                List available contexts
+  ssh-context --generate, -g <name>     Generate config template for context
+  ssh-context --help, -h                Show this help
 
 Current context: ${SSH_CONTEXT:-$DEFAULT_SSH_CONTEXT (default)}
 EOF

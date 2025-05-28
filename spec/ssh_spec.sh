@@ -10,7 +10,6 @@ Describe 'ZSH Environment'
   End
 End
 
-
 Describe 'ssh.zsh'
   Include ./zsh/modules/ssh.zsh
 
@@ -94,68 +93,115 @@ Describe 'ssh.zsh'
     End
   End
 
-  Describe '__generate_context_config'
-    setup() {
-      SSH_ROOT=$(mktemp -d)
-      mkdir -p "$SSH_ROOT/contexts/newcontext"
-      touch "$SSH_ROOT/contexts/newcontext/id_"{rsa,rsa.pub,ed25519}
-      function __get_ssh_root() { echo "$SSH_ROOT"; }
-    }
-    cleanup() { rm -rf "$SSH_ROOT"; }
-    BeforeEach setup
-    AfterEach cleanup
+Describe '__generate_context_config'
+  setup() {
+    SSH_ROOT=$(mktemp -d)
+    mkdir -p "$SSH_ROOT/contexts/newcontext"
+    touch "$SSH_ROOT/contexts/newcontext/id_"{rsa,rsa.pub,ed25519}
+    function __get_ssh_root() { echo "$SSH_ROOT"; }
+  }
+  cleanup() {
+    rm -rf "$SSH_ROOT"
+  }
+  BeforeEach 'setup'
+  AfterEach 'cleanup'
 
-    It "creates new config with key references when no existing config"
-      When call __generate_context_config "newcontext"
-      The path "$SSH_ROOT/contexts/newcontext/config" should be file
-      The contents of file "$SSH_ROOT/contexts/newcontext/config" should include 'CONTEXT: newcontext'
-      The contents of file "$SSH_ROOT/contexts/newcontext/config" should include 'id_rsa'
-      The output should include "Generated config for context"
-      The status should be success
-    End
-
-    It "creates backup when config exists"
-      # Create existing config
-      echo "original config" > "$SSH_ROOT/contexts/newcontext/config"
-      When call __generate_context_config "newcontext"
-      # Verify backup was created
-      The path "$SSH_ROOT/contexts/newcontext/config.backup"* should be file
-      The contents of file "$SSH_ROOT/contexts/newcontext/config.backup"* should include 'original config'
-      # Verify new config was created
-      The path "$SSH_ROOT/contexts/newcontext/config" should be file
-      The contents of file "$SSH_ROOT/contexts/newcontext/config" should include 'CONTEXT: newcontext'
-      The output should include "Backed up existing config"
-      The output should include "Generated config for context"
-      The status should be success
-    End
-
-    It "includes all key files in config"
-      When call __generate_context_config "newcontext"
-      The contents of file "$SSH_ROOT/contexts/newcontext/config" should include 'id_rsa'
-      The contents of file "$SSH_ROOT/contexts/newcontext/config" should include 'id_ed25519'
-      The contents of file "$SSH_ROOT/contexts/newcontext/config" should not include 'id_rsa.pub'
-      The output should include "Generated config for context"
-      The status should be success
-    End
-
-    It "fails when context directory doesn't exist"
-      rm -rf "$SSH_ROOT/contexts/newcontext"
-      When call __generate_context_config "newcontext"
-      The path "$SSH_ROOT/contexts/newcontext" should not be exist
-      The stderr should include "doesn't exist"
-      The status should be failure
-    End
-
-    It "handles empty key directory gracefully"
-      rm -f "$SSH_ROOT/contexts/newcontext"/id_*
-      When call __generate_context_config "newcontext"
-      The path "$SSH_ROOT/contexts/newcontext/config" should be file
-      The contents of file "$SSH_ROOT/contexts/newcontext/config" should include 'CONTEXT: newcontext'
-      The contents of file "$SSH_ROOT/contexts/newcontext/config" should not include 'IdentityFile'
-      The output should include "Generated config for context"
-      The status should be success
-    End
+  It "includes all key files in config"
+    When call __generate_context_config "newcontext"
+    The contents of file "$SSH_ROOT/contexts/newcontext/config" should include 'id_rsa'
+    The contents of file "$SSH_ROOT/contexts/newcontext/config" should include 'id_ed25519'
+    The contents of file "$SSH_ROOT/contexts/newcontext/config" should not include 'id_rsa.pub'
+    The output should include "Generated config for context"
+    The status should be success
   End
+
+  It "fails when context directory doesn't exist"
+    rm -rf "$SSH_ROOT/contexts/newcontext"
+    When call __generate_context_config "newcontext"
+    The path "$SSH_ROOT/contexts/newcontext" should not be exist
+    The stderr should include "doesn't exist"
+    The status should be failure
+  End
+
+  It "handles empty key directory gracefully"
+    rm -f "$SSH_ROOT/contexts/newcontext"/id_*
+    When call __generate_context_config "newcontext"
+    The path "$SSH_ROOT/contexts/newcontext/config" should be file
+    The contents of file "$SSH_ROOT/contexts/newcontext/config" should include 'CONTEXT: newcontext'
+    The contents of file "$SSH_ROOT/contexts/newcontext/config" should not include 'IdentityFile'
+    The output should include "Generated config for context"
+    The status should be success
+  End
+
+  It 'creates backup when config exists and user confirms'
+    touch "$SSH_ROOT/contexts/newcontext/config"
+    Mock __confirm_overwrite
+      REPLY=y
+      return 0
+    End
+
+    When call __generate_context_config newcontext
+    The status should be success
+    The stdout should include "📦 Backed up existing config"
+    The stderr should include "⚠️ WARNING"
+    The path "$SSH_ROOT/contexts/newcontext/config.backup."* should be exist
+  End
+
+  It 'does not create backup and exits with failure'
+    touch "$SSH_ROOT/contexts/newcontext/config"
+    Mock __confirm_overwrite
+      REPLY=n
+      echo "🚫 Operation cancelled" >&2
+      return 1
+    End
+
+    When call __generate_context_config newcontext
+    The status should be failure
+    The stderr should include '🚫 Operation cancelled'
+    The stdout should not include "📦 Backed up existing config"
+    The stdout should include 'No changes made'
+  End
+
+  It 'shows warning when config exists'
+    touch "$SSH_ROOT/contexts/newcontext/config"
+    Mock __confirm_overwrite
+      REPLY=y
+      return 0
+    End
+
+    When call __generate_context_config newcontext
+    The stderr should include "⚠️ WARNING: This will overwrite"
+    The stderr should include "To restore your original config later"
+    The stdout should include "📦 Backed up existing config"
+    The stdout should include "✅ Generated config"
+  End
+
+  It 'shows correct backup filename in restore instructions'
+    touch "$SSH_ROOT/contexts/newcontext/config"
+    Mock __confirm_overwrite
+      REPLY=y
+      return 0
+    End
+
+    When call __generate_context_config newcontext
+    The stderr should match pattern "*cp '$SSH_ROOT/contexts/newcontext/config.backup.*' '$SSH_ROOT/contexts/newcontext/config'*"
+    The stdout should include "📦 Backed up existing config"
+    The stdout should include "✅ Generated config"
+  End
+
+  It 'proceeds without warning when no config exists'
+    rm -f "$SSH_ROOT/contexts/newcontext/config" 2>/dev/null || true
+    When call __generate_context_config newcontext
+    The status should be success
+    The stderr should not include "⚠️ WARNING"
+    # Since we don't have a config file ther will be no backup file created,
+    # hence no message about creating a backup
+    The stdout should include "✅ Generated config"
+    The file "$SSH_ROOT/contexts/newcontext/config" should be exist
+  End
+End
+
+
 
   Describe 'ssh-context command'
     setup() {
