@@ -107,6 +107,7 @@ source $ZSH/oh-my-zsh.sh
 DISABLE_AUTO_UPDATE=true
 DISABLE_UPDATE_PROMPT=true
 
+# This is optional, comment this out if you don't to use vi keybindings
 set -o vi
 
 # Load SSH Manager
