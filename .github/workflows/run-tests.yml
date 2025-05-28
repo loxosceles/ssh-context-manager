@@ -12,22 +12,24 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Zsh and set as default shell
-      run: |
-        sudo apt-get install -y zsh
-        sudo chsh -s $(which zsh)
+    - name: Install Zsh
+      run: sudo apt-get install -y zsh
 
     - name: Install ShellSpec
       run: |
         curl -fsSL https://git.io/shellspec | sh -s -- --yes
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: Create SSH test profile structure
+    - name: Create SSH personal profile structure
       run: |
-        mkdir -p ~/.ssh/contexts/test-profile
-        touch ~/.ssh/contexts/test-profile/{config,id_rsa,id_rsa.pub,known_hosts}
-        chmod 600 ~/.ssh/contexts/test-profile/id_rsa
-        chmod 700 ~/.ssh/contexts ~/.ssh/contexts/test-profile
+        mkdir -p ~/.ssh/contexts/personal
+        touch ~/.ssh/contexts/personal/{config,id_rsa,id_rsa.pub,known_hosts}
+        chmod 600 ~/.ssh/contexts/personal/id_rsa
+        chmod 700 ~/.ssh/contexts ~/.ssh/contexts/personal
+        ls -la ~/.ssh/contexts/personal  # For debugging
 
-    - name: Run ShellSpec tests
-      run: shellspec -s zsh
+    - name: Run ShellSpec tests in Zsh
+      shell: zsh {0}
+      run: |
+        echo "Current shell: $SHELL"
+        shellspec -s zsh
