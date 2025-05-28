@@ -30,6 +30,8 @@ jobs:
 
     - name: Run ShellSpec tests in Zsh
       shell: zsh {0}
+      env:
+        SSH_CONTEXT: personal 
       run: |
         echo "Current shell: $SHELL"
         shellspec -s zsh
