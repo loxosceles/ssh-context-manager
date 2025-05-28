@@ -12,8 +12,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Zsh
-      run: sudo apt-get install -y zsh
+    - name: Install Zsh and set as default shell
+      run: |
+        sudo apt-get install -y zsh
+        sudo chsh -s $(which zsh) $(whoami)
 
     - name: Install ShellSpec
       run: |
@@ -22,10 +24,10 @@ jobs:
 
     - name: Create SSH test profile structure
       run: |
-        mkdir -p ~/.ssh/contexts/personal
-        touch ~/.ssh/contexts/personal/{config,id_rsa,id_rsa.pub,known_hosts}
-        # Set appropriate permissions for private key
-        chmod 600 ~/.ssh/contexts/personal/id_rsa
+        mkdir -p ~/.ssh/contexts/test-profile
+        touch ~/.ssh/contexts/test-profile/{config,id_rsa,id_rsa.pub,known_hosts}
+        chmod 600 ~/.ssh/contexts/test-profile/id_rsa
+        chmod 700 ~/.ssh/contexts ~/.ssh/contexts/test-profile
 
     - name: Run ShellSpec tests
       run: shellspec -s zsh
