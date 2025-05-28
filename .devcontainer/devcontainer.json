@@ -5,8 +5,7 @@
         "context": ".."
     },
     "containerEnv": {
-        "SSH_CONTEXT": "personal",
-        "ZSH_PROFILE": "devcontainer"
+        "SSH_CONTEXT": "personal"
     },
     "mounts": [
         {

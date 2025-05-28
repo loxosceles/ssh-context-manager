@@ -20,26 +20,213 @@ script, no dependencies required (other than the test runner `shellspec`).
     - Isolates development environments—containers never see unrelated keys,
     keeping projects secure and clean.
 
-## Usage
+## Quick Start
 
-To switch SSH contexts, use the `ssh-context` command as shown below. This updates the `SSH_CONTEXT` environment variable and applies the selected context's configuration:
+### Pre-requisites
 
-```sh
-ssh-context <context-name>
+1. Backup your current SSH config:
+    ```bash
+    cp -R ~/.ssh ~/.ssh_bak
+    ```
+1. Create a new context directory:
+    ```bash
+    # For the sake of this introduction, I'll assume here that you name your
+    # private context "personal", for the purpose of storing your personal SSH
+    # keys.
+
+    mkdir -p ~/.ssh/contexts/personal
+    ```
+1. If you want to try context switching, you can repeat the previous step to
+   create another context, e.g. `work`:
+    ```bash
+    mkdir -p ~/.ssh/contexts/work
+    ```
+    Use your exsiting keys or start from scratch and generate new SSH keys for
+    each context: 
+    ```bash
+
+    # Replace the email address(es) with your own here
+    ssh-keygen -t ed25519 -f ~/.ssh/contexts/personal/id_ed25519 -C "you@developer.me"
+
+    # Optionally:
+    # ssh-keygen -t ed25519 -f ~/.ssh/contexts/work/id_ed25519 -C "you@my-company.com"
+    ```
+1. Create a SSH config file for each context:
+    ```bash
+    # For personal context
+    USERNAME="your-username"  # Replace with your actual username on the server/ service
+    echo -e "Host personal\n  HostName localhost\n  User ${USERNAME}\n  IdentityFile ~/.ssh/contexts/personal/id_ed25519" > ~/.ssh/contexts/personal/config
+
+    # For work context
+    # echo -e "Host work\n  HostName localhost\n  User ${USERNAME}\n  IdentityFile ~/.ssh/contexts/work/id_ed25519" > ~/.ssh/contexts/work/config
+    ```
+
+After this initial setup, you can start using the SSH Context Manager in one of
+the following scenarios:
+
+1. **On Host Machine Environment**
+1. **In VSCode devcontainer Environment**
+
+### On Host Machine Environment
+
+1. Make sure that you have followed the pre-requisites above and have
+   created at least one context (e.g. `personal`).
+1. Open a terminal and run the following command to sync the SSH context:
+    ```bash
+    sync-configs --sync && exec zsh
+    ```
+    This will copy the context-specific SSH config to `~/.ssh/config` and backup
+    your original `.zshrc` file to `~/.zshrc.bak`. The new `.zshrc` will source
+    the SSH context manager script.
+1. Revise the changes to your zsh config by running:
+    ```bash
+    cat ~/.zshrc
+    ```
+    You will see that the SSH context manager is now replaced with a symlink
+    pointing to the `.zshrc` in this repository. This file has no special
+    configurations other than sourcing the SSH context manager script. You still
+    have a backup of your original `.zshrc` file available as `~/.zshrc.bak`
+    which enables you to revert back to your original configuration if needed. 
+1. You can now use the `ssh-context` commands to switch between contexts,
+    list available contexts, or generate new content templates. You might want
+    to experiment with the SSH context manager inside the devcontainer first,
+    read the documentation below specific commands, these are applicable on the
+    host as well.
+
+    > **⚠️ IMPORTANT:**  
+    > Note that the main difference between the host machine and the devcontainer
+    > environment is that in the devcontainer, you will mount a specific context
+    > into the container, which is editible via the tool. Any other contexts you
+    > create are not automatically persisted or written into you host machine's
+    > `~/.ssh/contexts/` directory. This gives you the opportunity to toy with
+    > differnt contexts without affecting your host machine's SSH configuration,
+    > with the exception of the context you mounted into the devcontainer.
+    >
+    > In turn, on the host machine, all contexts are editable and they are
+    > persisted.
+    
+    
+### In VSCode devcontainer Environment
+
+1. Make sure that you have followed the pre-requisites above and have
+   created at least one context (e.g. `personal`).
+
+1. Use any editor to open the `.devcontainer.json` file inside the
+`.devcontainer` directory of the `ssh-context-manager` repository. Make sure
+that the `containerEnv` section includes the `SSH_CONTEXT` variable set to your
+desired context, e.g.:
+    ```json
+    "containerEnv": {
+        "SSH_CONTEXT": "personal"
+    }
+    ```
+    if you named your context differently, replace `personal` with the name of
+    the context you want to mount into the devcontainer. 
+
+    > **⚠️ IMPORTANT:**  
+    > Whatever context you mount, be aware that this context will be editable via the tool.  
+    > Any edits will be reflected in your host machine's `~/.ssh/contexts/<context-name>/` directory.  
+    > **Do not mount a context you do not want to edit.**
+1. Open the ssh-context-manager repository in VSCode. Make sure that you have the [DevContainers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed. You should be prompted to reopen the repository in a devcontainer. Click on "Reopen in Container".
+1. Once the devcontainer is up and running, open a terminal in VSCode and run
+the following command to sync the SSH context: 
+    ```bash
+    sync-configs --sync && exec zsh
+    ```
+    This will copy the context-specific SSH config to `~/.ssh/config` and backup
+    Reload the zsh environment with `exec zsh` to apply the synced changes.
+1. Revise the changes to your zsh config by running:
+    ```bash
+    cat ~/.zshrc
+    ```
+    As in the host machine environment, you will see that your `.zshrc` is now
+    replaced with a symlink pointing to the `.zshrc` in this repository. Like
+    before, the original `.zshrc` is backed up to `~/.zshrc.bak`.    
+    
+    1. You can now use the
+    `ssh-context` commands to switch between contexts, list
+available contexts, or generate new context templates. 
+
+    To list all available contexts, run:
+    ```bash
+    ssh-context --list
+    ```
+
+    To generate a new context template, run:
+    ```bash
+    ssh-context --generate new-context-name
+    ```
+    This will print the instructions you need to follow first, such as creating
+    the context directory and SSH keys. This is intentionally kept as a manual
+    step to ensure you have control over the key creation process.
+
+    If the context is not yet created, this is what you will see:
+    ```text
+    Error: Context directory '/home/vscode/.ssh/contexts/new-context-name' doesn't exist.
+
+    To create a new context:
+    1. Create the context directory:
+    mkdir -p /home/vscode/.ssh/contexts/new-context-name
+
+    2. Add your SSH keys to the directory:
+    cp /path/to/your/key /home/vscode/.ssh/contexts/new-context-name/id_rsa
+    cp /path/to/your/key.pub /home/vscode/.ssh/contexts/new-context-name/id_rsa.pub
+
+    3. Run this command again:
+    ssh-context --generate new-context-name
+
+1. Switch to the the `new-context-name` context, run: 
+    ```bash
+    # Per default, you will be in the context which you originally set in the
+    # `.devcontainer.json` file.
+
+    ssh-context new-context-name 
+    ```
+1. Try connecting to a host using the new context:
+    ```bash
+    ssh my-configured-server # or whatever you used in your SSH config's host configuration
+    ```
+1. If you want to persist a newly created context, you will need to do this
+manually by copying the context directory to your host machine's
+`~/.ssh/contexts/` directory.  
+
+**NOTE:** A great usecase is to set up two different GitHub accounts
+(e.g. one for work and one for personal projects). You can create two contexts
+with a config similar to this:
+
+```text
+# ~/.ssh/contexts/personal/config
+
+Host github
+  HostName github.com
+  User private-git-user-name 
+  IdentityFile ~/.ssh/contexts/personal/id_ed25519
+
+# ~/.ssh/contexts/work/config
+Host github
+  HostName github.com
+  User work-git-user-name 
+  IdentityFile ~/.ssh/contexts/work/id_ed25519
 ```
 
-If you are using a devcontainer, ensure the `.devcontainer.json` includes the
-following to set the active context (use the .devontainer.json of this
-repository as a reference):
+Then you can clone repositories using the respective context:
+```bash
+ssh-context personal && ssh -T github
+# Will output:
+# Hi private-git-user-name! You've successfully authenticated, but GitHub does not provide shell access.
 
-```json
-"containerEnv": {
-    "SSH_CONTEXT": "<context-name>"
-}
+ssh-context work && ssh -T github
+# Will output:
+# Hi work-git-user-name! You've successfully authenticated, but GitHub does not provide shell access.
 ```
 
-After switching, your active SSH config will be updated in `~/.ssh/config`.
-- Your active SSH config will be updated in `~/.ssh/config`.
+## How it Works
+
+The environment variable `SSH_CONTEXT` is used to determine the active SSH
+context. The SSH context manager will will use this variable to determine
+the active context and keep it in sync. The base config file in the `$HOME/.ssh`
+root folder will be automatically updated to include to the active context's
+`~/.ssh/contexts/<context-name>/config` file. This file should not be edited. 
 
 ## Run the Tests
 
