@@ -2,11 +2,7 @@
     "name": "Generic Ubuntu Development Container",
     "build": {
         "dockerfile": "Dockerfile",
-        "context": "..",
-        "args": {
-            "SOURCE_DIR": "/workspace/zsh",
-            "TARGET_DIR": "/home/vscode/.config/zsh"
-        }
+        "context": ".."
     },
     "containerEnv": {
         "SSH_CONTEXT": "personal",

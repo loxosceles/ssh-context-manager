@@ -1,6 +1,4 @@
 #!/usr/bin/env zsh
 
-# Set up SSH manager
-sudo mkdir -p ~/.ssh && \
-sudo cp ~/.ssh/contexts/${SSH_CONTEXT}/config ~/.ssh/config && \
+# Set correct permission of the mounted .ssh directory 
 sudo chown -R ${USER}:${USER} ~/.ssh
