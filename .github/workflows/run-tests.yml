@@ -26,8 +26,6 @@ jobs:
         touch ~/.ssh/contexts/personal/{config,id_rsa,id_rsa.pub,known_hosts}
         chmod 600 ~/.ssh/contexts/personal/id_rsa
         chmod 700 ~/.ssh/contexts ~/.ssh/contexts/personal
-        ls -la ~/.ssh/contexts/personal  # For debugging
-
     - name: Run ShellSpec tests in Zsh
       shell: zsh {0}
       env:

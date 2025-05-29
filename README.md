@@ -258,9 +258,15 @@ To run the tests, run the following command in your terminal:
 The shellspec executable is already included in the devcontainer, so you can run
 it directly.
 
-## Development
+## Uninstall
+To uninstall the SSH Context Manager, simply remove the sourced line from your
+`.zshrc` file and delete the `ssh.zsh` script:
 
-- Contributions are welcome! Please open issues or pull requests.
+```zsh
+sed -i '/source ~\/\.config\/zsh\/ssh\.zsh/d' ~/.zshrc
+rm ~/.config/zsh/ssh.zsh && rmdir ~/.config/zsh 2>/dev/null
+```
+
 
 ## Command Reference
 
@@ -342,6 +348,16 @@ Default location:
 
 > Note: Contexts are automatically detected from subdirectories in `~/.ssh/contexts/`
 
+## Contributing  
+
+This is a small project, but feedback and contributions are welcome!  
+
+- **Bug reports**: Open an [issue]( https://github.com/loxosceles/ssh-context-manager/issues) with details.  
+- **Suggestions**: Feel free to discuss ideas in issues.  
+- **Code**: Fork the repo, make changes, and submit a pull request.  
+
+Keep it simple and focused. Thanks for helping out! 
+
 ## License
 
-MIT License
+[MIT License](./LICENSE)
