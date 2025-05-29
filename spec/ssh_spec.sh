@@ -1,5 +1,5 @@
 Describe 'ssh.zsh'
-  Include ./zsh/modules/ssh.zsh
+  Include ./ssh.zsh
 
   Describe 'Environment Variables'
     It "tests if the SOCK environment variable is set"

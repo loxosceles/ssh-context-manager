@@ -13,11 +13,11 @@ COPY .devcontainer/post-create.sh /usr/src/
 RUN chmod +x /usr/src/post-create.sh
 
 # Copy everything from project root's zsh folder
-COPY zsh /workspace/zsh
+# COPY zsh /workspace/zsh
 
 # Install sync script
-COPY sync-configs /usr/local/bin/
-RUN chmod +x /usr/local/bin/sync-configs
+# COPY sync-configs /usr/local/bin/
+# RUN chmod +x /usr/local/bin/sync-configs
 
 # Set default user (already exists in base image)
 USER vscode
