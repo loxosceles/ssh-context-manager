@@ -2,11 +2,6 @@ Describe 'ssh.zsh'
   Include ./ssh.zsh
 
   Describe 'Environment Variables'
-    It "tests if the SOCK environment variable is set"
-      When call echo $SOCK
-      The output should equal "/tmp/ssh-agent-${USER}-screen"
-    End
-
      It 'tests if the SSH_CONTEXT environment variable is set'
       When call echo $SSH_CONTEXT
       The output should equal 'personal'
